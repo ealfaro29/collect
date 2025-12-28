@@ -428,7 +428,7 @@ class UNOCollectionApp {
         card.onclick = () => this.openViewModal(deck.id);
 
         const imageHTML = deck.photo
-            ? `<img src="${deck.photo}" alt="${deck.name}\" class="deck-card-image">`
+            ? `<img src="${deck.photo}" alt="${deck.name}" class="deck-card-image">`
             : `<div class="deck-card-image">🎴</div>`;
 
         const categoryHTML = deck.category
@@ -490,6 +490,12 @@ class UNOCollectionApp {
     closeCropModal() {
         this.cropModal.classList.remove('show');
         document.body.style.overflow = '';
+
+        // Clean up loupe canvas to prevent duplicates
+        if (this.perspectiveCropTool && this.perspectiveCropTool.loupeCanvas) {
+            this.perspectiveCropTool.loupeCanvas.remove();
+        }
+
         this.perspectiveCropTool = null;
         this.tempPhotoData = null;
         this.photoInput.value = ''; // Reset file input
