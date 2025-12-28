@@ -2,7 +2,7 @@
     "name": "UNO Collection Tracker",
     "short_name": "UNO Tracker",
     "description": "Track and manage your UNO deck collection",
-    "start_url": "/",
+    "start_url": "/collect/",
     "display": "standalone",
     "background_color": "#0f0f1e",
     "theme_color": "#ff4757",
