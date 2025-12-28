@@ -323,16 +323,27 @@ class PerspectiveCrop {
         );
         const outputHeight = Math.round((leftHeight + rightHeight) / 2);
 
+        // Limit max dimensions to prevent performance issues on mobile
+        const maxDimension = 1200;
+        let finalWidth = outputWidth;
+        let finalHeight = outputHeight;
+
+        if (outputWidth > maxDimension || outputHeight > maxDimension) {
+            const scale = maxDimension / Math.max(outputWidth, outputHeight);
+            finalWidth = Math.round(outputWidth * scale);
+            finalHeight = Math.round(outputHeight * scale);
+        }
+
         // Create output canvas with calculated dimensions
         const outputCanvas = document.createElement('canvas');
-        outputCanvas.width = outputWidth;
-        outputCanvas.height = outputHeight;
+        outputCanvas.width = finalWidth;
+        outputCanvas.height = finalHeight;
 
         const dstCorners = [
             { x: 0, y: 0 },
-            { x: outputWidth, y: 0 },
-            { x: outputWidth, y: outputHeight },
-            { x: 0, y: outputHeight }
+            { x: finalWidth, y: 0 },
+            { x: finalWidth, y: finalHeight },
+            { x: 0, y: finalHeight }
         ];
 
         // Apply perspective transform
@@ -343,8 +354,8 @@ class PerspectiveCrop {
             dstCorners
         );
 
-        // Convert to data URL
-        const croppedImage = outputCanvas.toDataURL('image/jpeg', 0.9);
+        // Convert to data URL with reduced quality to save localStorage space
+        const croppedImage = outputCanvas.toDataURL('image/jpeg', 0.75);
         this.onComplete(croppedImage);
     }
 

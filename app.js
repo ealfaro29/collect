@@ -110,7 +110,18 @@ class UNOCollectionApp {
     }
 
     saveDecks() {
-        localStorage.setItem('unoDecks', JSON.stringify(this.decks));
+        try {
+            localStorage.setItem('unoDecks', JSON.stringify(this.decks));
+        } catch (e) {
+            if (e.name === 'QuotaExceededError') {
+                alert('Storage limit reached! Try using smaller images or delete some decks.');
+                console.error('LocalStorage quota exceeded:', e);
+            } else {
+                alert('Error saving deck. Please try again.');
+                console.error('Error saving to localStorage:', e);
+            }
+            throw e; // Re-throw to prevent the modal from closing
+        }
     }
 
     loadCategories() {
