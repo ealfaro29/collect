@@ -219,6 +219,7 @@ body {
     width: 100%;
     height: 140px;
     object-fit: cover;
+    object-position: center;
     background: linear-gradient(135deg, var(--color-bg-tertiary) 0%, var(--color-bg-secondary) 100%);
     display: flex;
     align-items: center;
@@ -578,8 +579,8 @@ body {
 
 .view-deck-image {
     width: 100%;
-    height: 300px;
-    object-fit: cover;
+    max-height: 500px;
+    object-fit: contain;
     border-radius: var(--radius-md);
     margin-bottom: 20px;
     background: linear-gradient(135deg, var(--color-bg-tertiary) 0%, var(--color-bg-secondary) 100%);

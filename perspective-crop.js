@@ -193,13 +193,6 @@ class PerspectiveCrop {
     }
 
     async applyCrop() {
-        // Create a new canvas for the cropped image
-        const outputCanvas = document.createElement('canvas');
-        const outputSize = 1000;
-        outputCanvas.width = outputSize;
-        outputCanvas.height = outputSize;
-        const outputCtx = outputCanvas.getContext('2d');
-
         // Scale corners back to original image coordinates
         const scaleX = this.img.width / this.canvas.width;
         const scaleY = this.img.height / this.canvas.height;
@@ -209,11 +202,39 @@ class PerspectiveCrop {
             y: c.y * scaleY
         }));
 
+        // Calculate dimensions based on corner distances
+        // Width: use the average of top and bottom edges
+        const topWidth = Math.sqrt(
+            Math.pow(srcCorners[1].x - srcCorners[0].x, 2) +
+            Math.pow(srcCorners[1].y - srcCorners[0].y, 2)
+        );
+        const bottomWidth = Math.sqrt(
+            Math.pow(srcCorners[2].x - srcCorners[3].x, 2) +
+            Math.pow(srcCorners[2].y - srcCorners[3].y, 2)
+        );
+        const outputWidth = Math.round((topWidth + bottomWidth) / 2);
+
+        // Height: use the average of left and right edges
+        const leftHeight = Math.sqrt(
+            Math.pow(srcCorners[3].x - srcCorners[0].x, 2) +
+            Math.pow(srcCorners[3].y - srcCorners[0].y, 2)
+        );
+        const rightHeight = Math.sqrt(
+            Math.pow(srcCorners[2].x - srcCorners[1].x, 2) +
+            Math.pow(srcCorners[2].y - srcCorners[1].y, 2)
+        );
+        const outputHeight = Math.round((leftHeight + rightHeight) / 2);
+
+        // Create output canvas with calculated dimensions
+        const outputCanvas = document.createElement('canvas');
+        outputCanvas.width = outputWidth;
+        outputCanvas.height = outputHeight;
+
         const dstCorners = [
             { x: 0, y: 0 },
-            { x: outputSize, y: 0 },
-            { x: outputSize, y: outputSize },
-            { x: 0, y: outputSize }
+            { x: outputWidth, y: 0 },
+            { x: outputWidth, y: outputHeight },
+            { x: 0, y: outputHeight }
         ];
 
         // Apply perspective transform
