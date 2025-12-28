@@ -175,13 +175,19 @@ class PerspectiveCrop {
         this.loupeCtx.arc(this.loupeSize / 2, this.loupeSize / 2, this.loupeSize / 2, 0, Math.PI * 2);
         this.loupeCtx.clip();
 
-        // Draw zoomed portion of image
-        const sourceSize = this.loupeSize / this.loupeZoom;
-        const sourceX = x - sourceSize / 2;
-        const sourceY = y - sourceSize / 2;
+        // Calculate source coordinates in the original image
+        // Convert canvas coordinates to image coordinates
+        const imgX = (x / this.canvas.width) * this.img.width;
+        const imgY = (y / this.canvas.height) * this.img.height;
 
+        // Size of the area to show (in image coordinates)
+        const sourceSize = (this.loupeSize / this.loupeZoom) * (this.img.width / this.canvas.width);
+        const sourceX = imgX - sourceSize / 2;
+        const sourceY = imgY - sourceSize / 2;
+
+        // Draw zoomed portion of ORIGINAL image (not the canvas with markers)
         this.loupeCtx.drawImage(
-            this.canvas,
+            this.img,
             sourceX, sourceY, sourceSize, sourceSize,
             0, 0, this.loupeSize, this.loupeSize
         );
