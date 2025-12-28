@@ -234,9 +234,6 @@ class PerspectiveCrop {
         const width = dstCanvas.width;
         const height = dstCanvas.height;
 
-        // Calculate transformation matrix
-        const matrix = this.getPerspectiveTransform(srcCorners, dstCorners);
-
         // Create temporary canvas with source image
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = srcImg.width;
@@ -248,20 +245,54 @@ class PerspectiveCrop {
         // Create output image data
         const dstData = dstCtx.createImageData(width, height);
 
-        // Apply transformation
+        // Calculate the inverse transformation matrix (dst -> src)
+        const matrix = this.getInversePerspectiveTransform(dstCorners, srcCorners);
+
+        // Apply transformation using bilinear interpolation
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const src = this.transformPoint(x, y, matrix);
 
-                if (src.x >= 0 && src.x < srcImg.width && src.y >= 0 && src.y < srcImg.height) {
-                    const srcX = Math.floor(src.x);
-                    const srcY = Math.floor(src.y);
-                    const srcIdx = (srcY * srcImg.width + srcX) * 4;
+                if (src.x >= 0 && src.x < srcImg.width - 1 && src.y >= 0 && src.y < srcImg.height - 1) {
+                    // Bilinear interpolation
+                    const x0 = Math.floor(src.x);
+                    const y0 = Math.floor(src.y);
+                    const x1 = x0 + 1;
+                    const y1 = y0 + 1;
+
+                    const fx = src.x - x0;
+                    const fy = src.y - y0;
+
+                    const w1 = (1 - fx) * (1 - fy);
+                    const w2 = fx * (1 - fy);
+                    const w3 = (1 - fx) * fy;
+                    const w4 = fx * fy;
+
+                    const idx00 = (y0 * srcImg.width + x0) * 4;
+                    const idx10 = (y0 * srcImg.width + x1) * 4;
+                    const idx01 = (y1 * srcImg.width + x0) * 4;
+                    const idx11 = (y1 * srcImg.width + x1) * 4;
+
                     const dstIdx = (y * width + x) * 4;
 
-                    dstData.data[dstIdx] = srcData.data[srcIdx];
-                    dstData.data[dstIdx + 1] = srcData.data[srcIdx + 1];
-                    dstData.data[dstIdx + 2] = srcData.data[srcIdx + 2];
+                    dstData.data[dstIdx] =
+                        srcData.data[idx00] * w1 +
+                        srcData.data[idx10] * w2 +
+                        srcData.data[idx01] * w3 +
+                        srcData.data[idx11] * w4;
+
+                    dstData.data[dstIdx + 1] =
+                        srcData.data[idx00 + 1] * w1 +
+                        srcData.data[idx10 + 1] * w2 +
+                        srcData.data[idx01 + 1] * w3 +
+                        srcData.data[idx11 + 1] * w4;
+
+                    dstData.data[dstIdx + 2] =
+                        srcData.data[idx00 + 2] * w1 +
+                        srcData.data[idx10 + 2] * w2 +
+                        srcData.data[idx01 + 2] * w3 +
+                        srcData.data[idx11 + 2] * w4;
+
                     dstData.data[dstIdx + 3] = 255;
                 }
             }
@@ -270,7 +301,8 @@ class PerspectiveCrop {
         dstCtx.putImageData(dstData, 0, 0);
     }
 
-    getPerspectiveTransform(src, dst) {
+    getInversePerspectiveTransform(src, dst) {
+        // Calculate transformation from src to dst
         const A = [];
         const b = [];
 
@@ -289,15 +321,25 @@ class PerspectiveCrop {
         const n = b.length;
         const augmented = A.map((row, i) => [...row, b[i]]);
 
+        // Gaussian elimination with partial pivoting
         for (let i = 0; i < n; i++) {
+            // Find pivot
             let maxRow = i;
             for (let k = i + 1; k < n; k++) {
                 if (Math.abs(augmented[k][i]) > Math.abs(augmented[maxRow][i])) {
                     maxRow = k;
                 }
             }
+
+            // Swap rows
             [augmented[i], augmented[maxRow]] = [augmented[maxRow], augmented[i]];
 
+            // Check for singular matrix
+            if (Math.abs(augmented[i][i]) < 1e-10) {
+                continue;
+            }
+
+            // Eliminate column
             for (let k = i + 1; k < n; k++) {
                 const factor = augmented[k][i] / augmented[i][i];
                 for (let j = i; j <= n; j++) {
@@ -306,8 +348,14 @@ class PerspectiveCrop {
             }
         }
 
-        const x = new Array(n);
+        // Back substitution
+        const x = new Array(n).fill(0);
         for (let i = n - 1; i >= 0; i--) {
+            if (Math.abs(augmented[i][i]) < 1e-10) {
+                x[i] = 0;
+                continue;
+            }
+
             x[i] = augmented[i][n];
             for (let j = i + 1; j < n; j++) {
                 x[i] -= augmented[i][j] * x[j];
