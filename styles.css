@@ -642,6 +642,55 @@ body {
     gap: 12px;
 }
 
+/* Perspective Crop Modal */
+.crop-modal-content {
+    max-width: 600px;
+    max-height: 90vh;
+}
+
+.crop-instructions {
+    padding: 16px 24px;
+    background: var(--color-bg-tertiary);
+    border-bottom: 2px solid var(--color-border);
+    text-align: center;
+}
+
+.crop-instructions p {
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    margin: 0;
+}
+
+.crop-canvas-container {
+    padding: 20px;
+    background: var(--color-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+}
+
+#cropCanvas {
+    max-width: 100%;
+    max-height: 500px;
+    border-radius: var(--radius-sm);
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.crop-actions {
+    padding: 20px 24px;
+    border-top: 2px solid var(--color-border);
+    display: flex;
+    gap: 12px;
+    background: var(--color-bg-secondary);
+}
+
+.crop-actions .btn {
+    flex: 1;
+}
+
+
 /* Responsive adjustments */
 @media (max-width: 400px) {
     .collection-grid {

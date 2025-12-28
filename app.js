@@ -5,6 +5,8 @@ class UNOCollectionApp {
         this.categories = this.loadCategories();
         this.currentDeckId = null;
         this.isEditMode = false;
+        this.perspectiveCropTool = null;
+        this.tempPhotoData = null;
         this.initializeApp();
     }
 
@@ -19,6 +21,7 @@ class UNOCollectionApp {
         // Modals
         this.deckModal = document.getElementById('deckModal');
         this.viewModal = document.getElementById('viewModal');
+        this.cropModal = document.getElementById('cropModal');
 
         // Buttons
         this.addDeckBtn = document.getElementById('addDeckBtn');
@@ -27,6 +30,9 @@ class UNOCollectionApp {
         this.cancelBtn = document.getElementById('cancelBtn');
         this.editDeckBtn = document.getElementById('editDeckBtn');
         this.deleteDeckBtn = document.getElementById('deleteDeckBtn');
+        this.closeCropModalBtn = document.getElementById('closeCropModal');
+        this.cancelCropBtn = document.getElementById('cancelCrop');
+        this.applyCropBtn = document.getElementById('applyCrop');
 
         // Form elements
         this.deckForm = document.getElementById('deckForm');
@@ -90,6 +96,11 @@ class UNOCollectionApp {
         // View modal actions
         this.editDeckBtn.addEventListener('click', () => this.editCurrentDeck());
         this.deleteDeckBtn.addEventListener('click', () => this.deleteCurrentDeck());
+
+        // Crop modal controls
+        this.closeCropModalBtn.addEventListener('click', () => this.closeCropModal());
+        this.cancelCropBtn.addEventListener('click', () => this.closeCropModal());
+        this.applyCropBtn.addEventListener('click', () => this.applyCropAndClose());
     }
 
     // Local Storage operations
@@ -321,10 +332,8 @@ class UNOCollectionApp {
 
         const reader = new FileReader();
         reader.onload = (e) => {
-            this.previewImage.src = e.target.result;
-            this.previewImage.style.display = 'block';
-            this.photoPreview.style.display = 'none';
-            this.removePhotoBtn.style.display = 'flex';
+            this.tempPhotoData = e.target.result;
+            this.openCropModal(this.tempPhotoData);
         };
         reader.readAsDataURL(file);
     }
@@ -463,6 +472,45 @@ class UNOCollectionApp {
         } else {
             return date.toLocaleDateString();
         }
+    }
+
+    // Perspective Crop methods
+    openCropModal(imageData) {
+        this.cropModal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+
+        // Initialize perspective crop tool
+        setTimeout(() => {
+            this.perspectiveCropTool = new PerspectiveCrop(imageData, (croppedImage) => {
+                this.handleCropComplete(croppedImage);
+            });
+        }, 100);
+    }
+
+    closeCropModal() {
+        this.cropModal.classList.remove('show');
+        document.body.style.overflow = '';
+        this.perspectiveCropTool = null;
+        this.tempPhotoData = null;
+        this.photoInput.value = ''; // Reset file input
+    }
+
+    applyCropAndClose() {
+        if (this.perspectiveCropTool) {
+            this.perspectiveCropTool.applyCrop();
+        }
+    }
+
+    handleCropComplete(croppedImage) {
+        if (croppedImage) {
+            // Set the cropped image as preview
+            this.previewImage.src = croppedImage;
+            this.previewImage.style.display = 'block';
+            this.photoPreview.style.display = 'none';
+            this.removePhotoBtn.style.display = 'flex';
+        }
+
+        this.closeCropModal();
     }
 }
 
