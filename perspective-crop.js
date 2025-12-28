@@ -9,6 +9,12 @@ class PerspectiveCrop {
         this.canvas = null;
         this.ctx = null;
         this.img = new Image();
+        this.loupeCanvas = null;
+        this.loupeCtx = null;
+        this.loupeSize = 120;
+        this.loupeZoom = 3;
+        this.showLoupe = false;
+        this.loupePos = { x: 0, y: 0 };
 
         this.init();
     }
@@ -16,6 +22,7 @@ class PerspectiveCrop {
     init() {
         this.img.onload = () => {
             this.setupCanvas();
+            this.setupLoupe();
             this.initializeCorners();
             this.render();
         };
@@ -54,6 +61,24 @@ class PerspectiveCrop {
         this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
         this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
         this.canvas.addEventListener('touchend', () => this.handleMouseUp());
+    }
+
+    setupLoupe() {
+        // Create loupe canvas
+        this.loupeCanvas = document.createElement('canvas');
+        this.loupeCanvas.width = this.loupeSize;
+        this.loupeCanvas.height = this.loupeSize;
+        this.loupeCanvas.style.position = 'absolute';
+        this.loupeCanvas.style.border = '3px solid #ff4757';
+        this.loupeCanvas.style.borderRadius = '50%';
+        this.loupeCanvas.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.5)';
+        this.loupeCanvas.style.pointerEvents = 'none';
+        this.loupeCanvas.style.display = 'none';
+        this.loupeCanvas.style.zIndex = '1000';
+        this.loupeCtx = this.loupeCanvas.getContext('2d');
+
+        // Add to container
+        this.canvas.parentElement.appendChild(this.loupeCanvas);
     }
 
     initializeCorners() {
@@ -109,6 +134,8 @@ class PerspectiveCrop {
             if (dist < hitRadius) {
                 this.selectedCorner = i;
                 this.isDragging = true;
+                this.showLoupe = true;
+                this.updateLoupe(corner.x, corner.y);
                 break;
             }
         }
@@ -132,12 +159,73 @@ class PerspectiveCrop {
     updateCorner(pos) {
         this.corners[this.selectedCorner].x = Math.max(0, Math.min(this.canvas.width, pos.x));
         this.corners[this.selectedCorner].y = Math.max(0, Math.min(this.canvas.height, pos.y));
+        this.updateLoupe(this.corners[this.selectedCorner].x, this.corners[this.selectedCorner].y);
         this.render();
+    }
+
+    updateLoupe(x, y) {
+        if (!this.showLoupe) return;
+
+        // Clear loupe
+        this.loupeCtx.clearRect(0, 0, this.loupeSize, this.loupeSize);
+
+        // Apply circular clip
+        this.loupeCtx.save();
+        this.loupeCtx.beginPath();
+        this.loupeCtx.arc(this.loupeSize / 2, this.loupeSize / 2, this.loupeSize / 2, 0, Math.PI * 2);
+        this.loupeCtx.clip();
+
+        // Draw zoomed portion of image
+        const sourceSize = this.loupeSize / this.loupeZoom;
+        const sourceX = x - sourceSize / 2;
+        const sourceY = y - sourceSize / 2;
+
+        this.loupeCtx.drawImage(
+            this.canvas,
+            sourceX, sourceY, sourceSize, sourceSize,
+            0, 0, this.loupeSize, this.loupeSize
+        );
+
+        // Draw crosshair
+        this.loupeCtx.strokeStyle = '#ff4757';
+        this.loupeCtx.lineWidth = 2;
+        this.loupeCtx.beginPath();
+        this.loupeCtx.moveTo(this.loupeSize / 2 - 10, this.loupeSize / 2);
+        this.loupeCtx.lineTo(this.loupeSize / 2 + 10, this.loupeSize / 2);
+        this.loupeCtx.moveTo(this.loupeSize / 2, this.loupeSize / 2 - 10);
+        this.loupeCtx.lineTo(this.loupeSize / 2, this.loupeSize / 2 + 10);
+        this.loupeCtx.stroke();
+
+        this.loupeCtx.restore();
+
+        // Position loupe - offset to not cover the finger
+        const canvasRect = this.canvas.getBoundingClientRect();
+        const loupeOffset = 80;
+
+        // Position above and to the left of the touch point
+        let loupeX = canvasRect.left + x - this.loupeSize - 20;
+        let loupeY = canvasRect.top + y - this.loupeSize - loupeOffset;
+
+        // Adjust if goes off screen
+        if (loupeX < canvasRect.left) {
+            loupeX = canvasRect.left + x + 20; // Switch to right side
+        }
+        if (loupeY < canvasRect.top) {
+            loupeY = canvasRect.top + y + 20; // Switch to below
+        }
+
+        this.loupeCanvas.style.left = loupeX + 'px';
+        this.loupeCanvas.style.top = loupeY + 'px';
+        this.loupeCanvas.style.display = 'block';
     }
 
     handleMouseUp() {
         this.isDragging = false;
         this.selectedCorner = null;
+        this.showLoupe = false;
+        if (this.loupeCanvas) {
+            this.loupeCanvas.style.display = 'none';
+        }
     }
 
     render() {
