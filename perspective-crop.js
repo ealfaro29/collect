@@ -175,6 +175,10 @@ class PerspectiveCrop {
         this.loupeCtx.arc(this.loupeSize / 2, this.loupeSize / 2, this.loupeSize / 2, 0, Math.PI * 2);
         this.loupeCtx.clip();
 
+        // Fill with white background first to ensure opacity
+        this.loupeCtx.fillStyle = 'white';
+        this.loupeCtx.fillRect(0, 0, this.loupeSize, this.loupeSize);
+
         // Calculate source coordinates in the original image
         // Convert canvas coordinates to image coordinates
         const imgX = (x / this.canvas.width) * this.img.width;
