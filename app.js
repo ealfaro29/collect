@@ -26,7 +26,6 @@ class UNOCollectionApp {
 
         // Buttons
         this.addDeckBtn = document.getElementById('addDeckBtn');
-        this.optimizeBtn = document.getElementById('optimizeBtn');
         this.closeModalBtn = document.getElementById('closeModal');
         this.closeViewModalBtn = document.getElementById('closeViewModal');
         this.cancelBtn = document.getElementById('cancelBtn');
@@ -65,7 +64,6 @@ class UNOCollectionApp {
     attachEventListeners() {
         // Modal controls
         this.addDeckBtn.addEventListener('click', () => this.openAddModal());
-        this.optimizeBtn.addEventListener('click', () => this.optimizeExistingImages());
         this.closeModalBtn.addEventListener('click', () => this.closeModal());
         this.closeViewModalBtn.addEventListener('click', () => this.closeViewModal());
         this.cancelBtn.addEventListener('click', () => this.closeModal());
@@ -168,54 +166,6 @@ class UNOCollectionApp {
         this.saveDecks();
         this.renderCollection();
         this.updateDeckCount();
-    }
-
-    // Optimize existing images to free up space
-    optimizeExistingImages() {
-        console.log('Starting image optimization...');
-        let optimizedCount = 0;
-
-        this.decks = this.decks.map(deck => {
-            if (deck.photo && deck.photo.startsWith('data:image')) {
-                // Create an image element
-                const img = new Image();
-                img.src = deck.photo;
-
-                // Wait for image to load and optimize
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-
-                    // Calculate new dimensions (max 400px)
-                    const maxDim = 400;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > maxDim || height > maxDim) {
-                        const scale = maxDim / Math.max(width, height);
-                        width = Math.round(width * scale);
-                        height = Math.round(height * scale);
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    // Compress to JPEG quality 0.5
-                    const optimizedPhoto = canvas.toDataURL('image/jpeg', 0.5);
-                    deck.photo = optimizedPhoto;
-                    optimizedCount++;
-
-                    // Save when all images are processed
-                    if (optimizedCount === this.decks.filter(d => d.photo).length) {
-                        this.saveDecks();
-                        alert(`✅ Optimized ${optimizedCount} images! You now have more space.`);
-                        this.renderCollection();
-                    }
-                };
-            }
-            return deck;
-        });
     }
 
     updateDeck(id, deckData) {
