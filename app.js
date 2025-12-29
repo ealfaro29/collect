@@ -7,6 +7,7 @@ class UNOCollectionApp {
         this.isEditMode = false;
         this.perspectiveCropTool = null;
         this.tempPhotoData = null;
+        this.currentView = 'grid'; // 'grid', 'list', or 'category'
         this.initializeApp();
     }
 
@@ -93,7 +94,16 @@ class UNOCollectionApp {
 
         // Search
         this.searchInput.addEventListener('input', (e) => this.handleSearch(e));
-        this.clearSearchBtn.addEventListener('click', () => this.clearSearch());
+        this.clearSearchBtn.addEventListener('click', () => {
+            this.searchInput.value = '';
+            this.clearSearchBtn.style.display = 'none';
+            this.renderCollection();
+        });
+
+        // View toggle
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => this.switchView(e.currentTarget.dataset.view));
+        });
 
         // View modal actions
         this.editDeckBtn.addEventListener('click', () => this.editCurrentDeck());
@@ -233,6 +243,22 @@ class UNOCollectionApp {
 
     getDeck(id) {
         return this.decks.find(d => d.id === id);
+    }
+
+    // View switching
+    switchView(view) {
+        this.currentView = view;
+
+        // Update active button
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.view === view);
+        });
+
+        // Update grid classes
+        this.collectionGrid.classList.toggle('list-view', view === 'list');
+
+        // Re-render collection with new view
+        this.renderCollection();
     }
 
     // UI operations
@@ -474,13 +500,53 @@ class UNOCollectionApp {
             this.collectionGrid.style.display = 'none';
         } else {
             this.emptyState.classList.remove('show');
-            this.collectionGrid.style.display = 'grid';
+            this.collectionGrid.style.display = this.currentView === 'list' ? 'flex' : 'grid';
 
-            decksToRender.forEach(deck => {
-                const card = this.createDeckCard(deck);
-                this.collectionGrid.appendChild(card);
-            });
+            // Category view - group by category
+            if (this.currentView === 'category') {
+                const groupedDecks = this.groupByCategory(decksToRender);
+                Object.keys(groupedDecks).sort().forEach(category => {
+                    const section = document.createElement('div');
+                    section.className = 'category-section';
+
+                    const header = document.createElement('div');
+                    header.className = 'category-header';
+                    header.innerHTML = `
+                        <span class="category-title">${category}</span>
+                        <span class="category-count">(${groupedDecks[category].length})</span>
+                    `;
+                    section.appendChild(header);
+
+                    const categoryGrid = document.createElement('div');
+                    categoryGrid.className = 'collection-grid';
+                    groupedDecks[category].forEach(deck => {
+                        const card = this.createDeckCard(deck);
+                        categoryGrid.appendChild(card);
+                    });
+                    section.appendChild(categoryGrid);
+
+                    this.collectionGrid.appendChild(section);
+                });
+            } else {
+                // Grid or list view
+                decksToRender.forEach(deck => {
+                    const card = this.createDeckCard(deck);
+                    this.collectionGrid.appendChild(card);
+                });
+            }
         }
+    }
+
+    groupByCategory(decks) {
+        const grouped = {};
+        decks.forEach(deck => {
+            const category = deck.category || 'Uncategorized';
+            if (!grouped[category]) {
+                grouped[category] = [];
+            }
+            grouped[category].push(deck);
+        });
+        return grouped;
     }
 
     createDeckCard(deck) {
