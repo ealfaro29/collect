@@ -323,8 +323,9 @@ class PerspectiveCrop {
         );
         const outputHeight = Math.round((leftHeight + rightHeight) / 2);
 
-        // Limit max dimensions to prevent performance issues on mobile
-        const maxDimension = 1200;
+        // Limit max dimensions to prevent performance issues and save localStorage space
+        // For 100+ decks, we need to keep images small
+        const maxDimension = 600;
         let finalWidth = outputWidth;
         let finalHeight = outputHeight;
 
@@ -354,8 +355,9 @@ class PerspectiveCrop {
             dstCorners
         );
 
-        // Convert to data URL with reduced quality to save localStorage space
-        const croppedImage = outputCanvas.toDataURL('image/jpeg', 0.75);
+        // Convert to data URL with low quality to save localStorage space
+        // Quality 0.6 is sufficient for card images and allows storing 100+ decks
+        const croppedImage = outputCanvas.toDataURL('image/jpeg', 0.6);
         this.onComplete(croppedImage);
     }
 
