@@ -377,11 +377,33 @@ body {
     overflow: hidden;
     transition: max-height 0.3s ease, opacity 0.3s ease;
     opacity: 1;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px;
 }
 
 .category-section.collapsed .category-grid {
     max-height: 0;
     opacity: 0;
+}
+
+.category-grid .deck-card {
+    display: flex;
+    flex-direction: row;
+    height: 100px;
+}
+
+.category-grid .deck-card-image {
+    width: 100px;
+    height: 100%;
+    flex-shrink: 0;
+}
+
+.category-grid .deck-card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 /* Empty State */
