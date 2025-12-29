@@ -462,13 +462,24 @@ class UNOCollectionApp {
                     const header = document.createElement('div');
                     header.className = 'category-header';
                     header.innerHTML = `
-                        <span class="category-title">${category}</span>
-                        <span class="category-count">(${groupedDecks[category].length})</span>
+                        <div>
+                            <span class="category-title">${category}</span>
+                            <span class="category-count">(${groupedDecks[category].length})</span>
+                        </div>
+                        <svg class="category-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
                     `;
+
+                    // Add click handler to toggle collapse
+                    header.addEventListener('click', () => {
+                        section.classList.toggle('collapsed');
+                    });
+
                     section.appendChild(header);
 
                     const categoryGrid = document.createElement('div');
-                    categoryGrid.className = 'collection-grid';
+                    categoryGrid.className = 'collection-grid category-grid';
                     groupedDecks[category].forEach(deck => {
                         const card = this.createDeckCard(deck);
                         categoryGrid.appendChild(card);
